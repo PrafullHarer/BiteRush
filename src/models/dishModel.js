@@ -10,13 +10,13 @@ const dishSchema = new mongoose.Schema({
 const orderSchema = new mongoose.Schema({
   userId: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
   items: [{
-    dishId: { type: mongoose.Schema.Types.ObjectId, ref: 'Dish' },
+    dishId: String,
     name: String,
     price: Number,
     quantity: { type: Number, default: 1 }
   }],
   totalAmount: { type: Number, required: true },
-  status: { type: String, default: 'Pending' }
+  status: { type: String, default: 'Placed' }
 }, {
   timestamps: true
 });
@@ -26,6 +26,7 @@ const Order = mongoose.model('Order', orderSchema);
 
 const seedDishes = async () => {
   try {
+    if (mongoose.connection.readyState !== 1) return;
     const count = await Dish.countDocuments();
     if (count === 0) {
       await Dish.insertMany([
@@ -33,7 +34,7 @@ const seedDishes = async () => {
         { name: 'Double Burger', emoji: '🍔', price: 8.99, category: 'Popular Dishes' },
         { name: 'Crispy Tacos', emoji: '🌮', price: 6.99, category: 'Popular Dishes' }
       ]);
-      console.log('[+] Default dishes seeded successfully.');
+      console.log('[+] Default dishes seeded successfully into MongoDB.');
     }
   } catch (err) {
     console.error('[-] Seed Dishes Error:', err.message);
