@@ -16,10 +16,12 @@ const { authenticateToken } = require('./middleware/authMiddleware');
 const app = express();
 const PUBLIC_DIR = path.join(__dirname, '../public');
 
-// Connect to MongoDB Database
-connectDB().then(() => {
+// Ensure MongoDB database is connected on requests
+app.use(async (req, res, next) => {
+  await connectDB();
   UserModel.seedDemoUser();
   seedDishes();
+  next();
 });
 
 // Global Middlewares
