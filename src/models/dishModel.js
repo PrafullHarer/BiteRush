@@ -5,7 +5,7 @@ const dishSchema = new mongoose.Schema({
   emoji: { type: String, default: '🍕' },
   price: { type: Number, required: true },
   category: { type: String, default: 'Popular' }
-});
+}, { bufferCommands: false });
 
 const orderSchema = new mongoose.Schema({
   userId: { type: String, required: false },
@@ -18,7 +18,8 @@ const orderSchema = new mongoose.Schema({
   totalAmount: { type: Number, required: true },
   status: { type: String, default: 'Placed' }
 }, {
-  timestamps: true
+  timestamps: true,
+  bufferCommands: false
 });
 
 const Dish = mongoose.model('Dish', dishSchema);

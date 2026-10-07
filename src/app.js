@@ -34,19 +34,29 @@ const initDB = async () => {
       await UserModel.seedDemoUser();
       await seedDishes();
     } catch (e) {
+      initPromise = null;
       console.error('Initialization error:', e.message);
+      throw e;
     }
   })();
   return initPromise;
 };
 
 // Start initialization immediately
-initDB();
+initDB().catch(() => {});
 
 // Ensure DB is initialized before executing /api routes
 app.use('/api', async (req, res, next) => {
-  await initDB();
-  next();
+  try {
+    await initDB();
+    next();
+  } catch (err) {
+    console.error('Database connection error on API request:', err.message);
+    res.status(500).json({
+      success: false,
+      message: 'Database connection failed: ' + err.message
+    });
+  }
 });
 
 // Request Logging
