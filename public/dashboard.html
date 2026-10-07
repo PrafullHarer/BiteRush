@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Dashboard | BiteRush</title>
+  <meta name="description" content="Order your favorite dishes quickly on BiteRush.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/dashboard.css">
+</head>
+<body>
+
+  <!-- Header Matched to index.html -->
+  <header class="landing-header">
+    <div class="header-inner">
+      <a href="index.html" class="brand-logo">
+        <div class="brand-icon">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M18 8h1a4 4 0 0 1 0 8h-1"></path>
+            <path d="M2 8h16v9a4 4 0 0 1-4 4H6a4 4 0 0 1-4-4V8z"></path>
+            <line x1="6" y1="1" x2="6" y2="4"></line>
+            <line x1="10" y1="1" x2="10" y2="4"></line>
+            <line x1="14" y1="1" x2="14" y2="4"></line>
+          </svg>
+        </div>
+        <div class="brand-title">Bite<span>Rush</span></div>
+      </a>
+
+      <div class="header-right">
+        <div class="user-pill" id="userPill">
+          👤 <span id="userPillName">User</span>
+        </div>
+        <div class="cart-btn" id="cartBtn">
+          🛒 Cart (<span id="cartCount">0</span>)
+        </div>
+        <button class="logout-btn" id="logoutBtn">Sign Out</button>
+      </div>
+    </div>
+  </header>
+
+  <main class="simple-container">
+    
+    <!-- Popular Dishes Section -->
+    <section class="dishes-section">
+      <h2 class="section-title">Popular Dishes</h2>
+      <div class="dishes-list" id="dishesList">
+        <!-- Populated dynamically via JS -->
+      </div>
+    </section>
+
+    <!-- Order History Section -->
+    <section class="orders-section">
+      <h2 class="section-title">Order History</h2>
+      <div class="orders-container" id="ordersContainer">
+        <!-- Order history populated via JS -->
+      </div>
+    </section>
+
+    <!-- Cart Drawer Panel -->
+    <section class="cart-panel hidden" id="cartPanel">
+      <div class="cart-header">
+        <h3>Your Order</h3>
+        <button class="close-cart" id="closeCartBtn">&times;</button>
+      </div>
+      <div class="cart-items" id="cartItems">
+        <!-- Cart items populated here -->
+      </div>
+      <div class="cart-footer">
+        <div class="total-row">
+          <span>Total:</span>
+          <span class="total-price" id="cartTotal">$0.00</span>
+        </div>
+        <button class="order-now-btn" id="orderNowBtn">Order Now</button>
+      </div>
+    </section>
+
+    <!-- Toast Notification -->
+    <div class="toast hidden" id="toast"></div>
+
+  </main>
+
+  <script src="js/dashboard.js"></script>
+</body>
+</html>
