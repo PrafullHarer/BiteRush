@@ -34,33 +34,39 @@ const AuthController = {
         return res.status(400).json({ success: false, message: 'Password must be at least 6 characters long.' });
       }
 
-      const existingUser = await UserModel.findByEmail(email);
+      const cleanEmail = email.toLowerCase().trim();
+      const existingUser = await UserModel.findByEmail(cleanEmail);
       if (existingUser) {
         return res.status(409).json({ success: false, message: 'An account with this email already exists. Please log in.' });
       }
 
       const passwordHash = await bcrypt.hash(password, 10);
-      const newUser = await UserModel.create(fullname, email, passwordHash);
+      const newUser = await UserModel.create(fullname, cleanEmail, passwordHash);
+
+      const userId = (newUser._id || newUser.id).toString();
 
       const token = jwt.sign(
-        { id: newUser._id || newUser.id, email: newUser.email, fullname: newUser.fullname },
+        { id: userId, email: newUser.email, fullname: newUser.fullname },
         JWT_SECRET,
         { expiresIn: '7d' }
       );
 
       res.status(201).json({
         success: true,
-        message: 'Account created successfully!',
+        message: 'Account created successfully in database!',
         token,
         user: {
-          id: newUser._id || newUser.id,
+          id: userId,
           fullname: newUser.fullname,
           email: newUser.email
         }
       });
     } catch (error) {
       console.error('Registration Error:', error);
-      res.status(500).json({ success: false, message: 'An error occurred during registration.' });
+      if (error.code === 11000) {
+        return res.status(409).json({ success: false, message: 'An account with this email already exists. Please log in.' });
+      }
+      res.status(500).json({ success: false, message: 'Failed to create account: ' + (error.message || 'Database error') });
     }
   },
 
@@ -75,7 +81,8 @@ const AuthController = {
         return res.status(400).json({ success: false, message: 'Both Email and Password are required.' });
       }
 
-      const user = await UserModel.findByEmail(email);
+      const cleanEmail = email.toLowerCase().trim();
+      const user = await UserModel.findByEmail(cleanEmail);
       if (!user) {
         return res.status(401).json({ success: false, message: 'Invalid email or password.' });
       }
@@ -85,10 +92,10 @@ const AuthController = {
         return res.status(401).json({ success: false, message: 'Invalid email or password.' });
       }
 
-      const userId = user._id || user.id;
+      const userId = (user._id || user.id).toString();
 
       const token = jwt.sign(
-        { id: userId.toString(), email: user.email, fullname: user.fullname },
+        { id: userId, email: user.email, fullname: user.fullname },
         JWT_SECRET,
         { expiresIn: '7d' }
       );
@@ -106,7 +113,7 @@ const AuthController = {
       });
     } catch (error) {
       console.error('Login Error:', error);
-      res.status(500).json({ success: false, message: 'An error occurred during login.' });
+      res.status(500).json({ success: false, message: 'Login failed: ' + (error.message || 'Database error') });
     }
   },
 

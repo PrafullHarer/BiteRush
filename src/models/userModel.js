@@ -1,5 +1,11 @@
+/**
+ * User Model
+ * Manages user schema and database operations with MongoDB Atlas.
+ */
+
 const mongoose = require('mongoose');
 const bcrypt = require('bcryptjs');
+const connectDB = require('../config/database');
 
 const userSchema = new mongoose.Schema({
   fullname: { type: String, required: true, trim: true },
@@ -7,82 +13,50 @@ const userSchema = new mongoose.Schema({
   password: { type: String, required: true }
 }, { timestamps: true });
 
-const User = mongoose.model('User', userSchema);
-
-// In-Memory Fallback Cache for local offline operation
-const localUsers = [];
+const User = mongoose.models.User || mongoose.model('User', userSchema);
 
 const UserModel = {
   findByEmail: async (email) => {
+    if (!email) return null;
+    await connectDB();
     const cleanEmail = email.toLowerCase().trim();
-    try {
-      if (mongoose.connection.readyState === 1) {
-        return await User.findOne({ email: cleanEmail });
-      }
-    } catch (e) {}
-    return localUsers.find(u => u.email === cleanEmail);
+    return await User.findOne({ email: cleanEmail });
   },
 
   findById: async (id) => {
     if (!id) return null;
-    try {
-      if (mongoose.connection.readyState === 1 && mongoose.Types.ObjectId.isValid(id)) {
-        const user = await User.findById(id).select('-password');
-        if (user) return user;
-      }
-    } catch (e) {}
-    const u = localUsers.find(u => u.id === id || u._id === id || (u._id && u._id.toString() === id.toString()));
-    if (!u) return null;
-    const { password, ...rest } = u;
-    return rest;
+    await connectDB();
+    if (mongoose.Types.ObjectId.isValid(id)) {
+      return await User.findById(id).select('-password');
+    }
+    return null;
   },
 
   create: async (fullname, email, passwordHash) => {
+    await connectDB();
     const cleanEmail = email.toLowerCase().trim();
-    try {
-      if (mongoose.connection.readyState === 1) {
-        const user = new User({ fullname: fullname.trim(), email: cleanEmail, password: passwordHash });
-        const saved = await user.save();
-        return { id: saved._id, fullname: saved.fullname, email: saved.email, password: saved.password };
-      }
-    } catch (e) {}
-
-    const newUser = {
-      id: 'usr_' + Date.now(),
-      _id: 'usr_' + Date.now(),
+    const user = new User({
       fullname: fullname.trim(),
       email: cleanEmail,
-      password: passwordHash,
-      created_at: new Date()
-    };
-    localUsers.push(newUser);
-    return newUser;
+      password: passwordHash
+    });
+    const saved = await user.save();
+    console.log(`[+] User saved in MongoDB: ${saved.email} (${saved._id})`);
+    return saved;
   },
 
   seedDemoUser: async () => {
-    const demoEmail = 'demo@example.com';
-    const passwordHash = bcrypt.hashSync('password123', 10);
     try {
-      if (mongoose.connection.readyState === 1) {
-        const existing = await User.findOne({ email: demoEmail });
-        if (!existing) {
-          await User.create({ fullname: 'Demo User', email: demoEmail, password: passwordHash });
-          console.log('[+] Demo Account Ready in MongoDB -> demo@example.com | password123');
-        }
-        return;
+      await connectDB();
+      const demoEmail = 'demo@example.com';
+      const existing = await User.findOne({ email: demoEmail });
+      if (!existing) {
+        const passwordHash = bcrypt.hashSync('password123', 10);
+        await User.create({ fullname: 'Demo User', email: demoEmail, password: passwordHash });
+        console.log('[+] Demo Account Ready in MongoDB -> demo@example.com | password123');
       }
-    } catch (err) {}
-
-    if (!localUsers.find(u => u.email === demoEmail)) {
-      localUsers.push({
-        id: 'usr_demo',
-        _id: 'usr_demo',
-        fullname: 'Demo User',
-        email: demoEmail,
-        password: passwordHash,
-        created_at: new Date()
-      });
-      console.log('[+] Demo Account Ready (Local Fallback) -> demo@example.com | password123');
+    } catch (err) {
+      console.warn('Demo user seed check:', err.message);
     }
   }
 };
