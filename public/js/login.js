@@ -127,11 +127,13 @@ async function verifySession(token) {
     if (response.ok) {
       console.log('[✅ Session] Valid session found. Redirecting to dashboard...');
       window.location.href = 'dashboard.html';
-    } else {
-      console.log('[⚠️ Session] Token expired or invalid. Staying on login page.');
+    } else if (response.status === 401 || response.status === 403) {
+      console.log('[⚠️ Session] Token expired or invalid. Clearing saved token.');
+      localStorage.removeItem('auth_token');
+      localStorage.removeItem('auth_user');
     }
   } catch (e) {
-    console.error('[❌ Session] Verification failed:', e.message);
+    console.error('[❌ Session] Verification check error:', e.message);
   }
 }
 

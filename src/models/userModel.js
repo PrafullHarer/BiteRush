@@ -24,12 +24,14 @@ const UserModel = {
   },
 
   findById: async (id) => {
+    if (!id) return null;
     try {
-      if (mongoose.connection.readyState === 1) {
-        return await User.findById(id).select('-password');
+      if (mongoose.connection.readyState === 1 && mongoose.Types.ObjectId.isValid(id)) {
+        const user = await User.findById(id).select('-password');
+        if (user) return user;
       }
     } catch (e) {}
-    const u = localUsers.find(u => u.id === id || u._id === id);
+    const u = localUsers.find(u => u.id === id || u._id === id || (u._id && u._id.toString() === id.toString()));
     if (!u) return null;
     const { password, ...rest } = u;
     return rest;

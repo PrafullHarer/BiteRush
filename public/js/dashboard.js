@@ -35,6 +35,18 @@ async function checkDashboardSession() {
     return;
   }
 
+  // Pre-populate username from cached user data immediately for smooth UI
+  const cachedUserStr = localStorage.getItem('auth_user');
+  if (cachedUserStr) {
+    try {
+      const cached = JSON.parse(cachedUserStr);
+      const pillName = document.getElementById('userPillName');
+      if (pillName && cached && cached.fullname) {
+        pillName.textContent = cached.fullname.split(' ')[0];
+      }
+    } catch (e) {}
+  }
+
   console.log('[🔑 Session] Auth token found. Verifying session with server...');
 
   try {
@@ -51,15 +63,17 @@ async function checkDashboardSession() {
       if (pillName && user) {
         pillName.textContent = user.fullname.split(' ')[0];
       }
-    } else {
+      localStorage.setItem('auth_user', JSON.stringify(user));
+    } else if (response.status === 401 || response.status === 403) {
       console.warn('[⚠️ Session] Token expired or invalid. Clearing session...');
       localStorage.removeItem('auth_token');
       localStorage.removeItem('auth_user');
       window.location.href = 'login.html';
+    } else {
+      console.warn(`[⚠️ Session] Server response: ${response.status}. Maintaining local session.`);
     }
   } catch (err) {
-    console.error('[❌ Session] Verification error:', err.message);
-    window.location.href = 'login.html';
+    console.warn('[⚠️ Session] Verification network error. Session preserved:', err.message);
   }
 }
 
@@ -232,6 +246,13 @@ async function placeOrder() {
   }
 
   const token = localStorage.getItem('auth_token');
+  if (!token) {
+    console.warn('[⚠️ Order] User not authenticated.');
+    showToast('Please log in to place an order.');
+    setTimeout(() => { window.location.href = 'login.html'; }, 1000);
+    return;
+  }
+
   const totalPrice = cart.reduce((sum, item) => sum + (item.price * item.quantity), 0);
 
   console.log(`[📤 Order] Submitting order for ${cart.length} items. Total: $${totalPrice.toFixed(2)}`);
@@ -248,6 +269,14 @@ async function placeOrder() {
         totalAmount: totalPrice
       })
     });
+
+    if (res.status === 401 || res.status === 403) {
+      showToast('Session expired. Please log in again.');
+      localStorage.removeItem('auth_token');
+      localStorage.removeItem('auth_user');
+      setTimeout(() => { window.location.href = 'login.html'; }, 1200);
+      return;
+    }
 
     const data = await res.json();
     if (data.success) {

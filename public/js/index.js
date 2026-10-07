@@ -10,11 +10,14 @@ document.addEventListener("DOMContentLoaded", () => {
 });
 
 /**
- * Update Header Buttons Based on User Authentication State
+ * Update Header and CTA Buttons Based on User Authentication State
  */
 function renderHeaderAuthState() {
   const container = document.getElementById("headerAuthSlot");
-  if (!container) return;
+  const heroPrimary = document.getElementById("heroCtaPrimary");
+  const heroSecondary = document.getElementById("heroCtaSecondary");
+  const bottomCta = document.getElementById("bottomCtaBtn");
+  const catCards = document.querySelectorAll(".cat-card");
 
   const token = localStorage.getItem("auth_token");
   const userStr = localStorage.getItem("auth_user");
@@ -26,13 +29,44 @@ function renderHeaderAuthState() {
 
       console.log(`[👤 Auth State] Authenticated as: ${user.fullname} (${user.email})`);
 
-      container.innerHTML = `
-        <a href="dashboard.html" class="btn-secondary">My Dashboard</a>
-        <a href="dashboard.html" class="btn-primary">
-          <span>Hello, ${firstName}</span>
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="5" y1="12" x2="19" y2="12"></line><polyline points="12 5 19 12 12 19"></polyline></svg>
-        </a>
-      `;
+      if (container) {
+        container.innerHTML = `
+          <a href="dashboard.html" class="btn-secondary">My Dashboard</a>
+          <a href="dashboard.html" class="btn-primary">
+            <span>Hello, ${firstName}</span>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="5" y1="12" x2="19" y2="12"></line><polyline points="12 5 19 12 12 19"></polyline></svg>
+          </a>
+        `;
+      }
+
+      // Update Hero CTAs for authenticated user
+      if (heroPrimary) {
+        heroPrimary.href = "dashboard.html";
+        heroPrimary.innerHTML = `
+          <span>Go to Dashboard</span>
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="5" y1="12" x2="19" y2="12"></line><polyline points="12 5 19 12 12 19"></polyline></svg>
+        `;
+      }
+
+      if (heroSecondary) {
+        heroSecondary.href = "dashboard.html";
+        heroSecondary.textContent = "Order Food Now";
+      }
+
+      // Update Bottom CTA
+      if (bottomCta) {
+        bottomCta.href = "dashboard.html";
+        bottomCta.innerHTML = `
+          <span>Order Now</span>
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="5" y1="12" x2="19" y2="12"></line><polyline points="12 5 19 12 12 19"></polyline></svg>
+        `;
+      }
+
+      // Update Cuisines preview cards to point to dashboard
+      catCards.forEach(card => {
+        card.href = "dashboard.html";
+      });
+
       return;
     } catch (e) {
       console.warn("[⚠️ Auth State] Error parsing stored user data:", e.message);
@@ -41,10 +75,12 @@ function renderHeaderAuthState() {
 
   // Unauthenticated State
   console.log("[🔓 Auth State] No active session. Showing Sign In / Get Started buttons.");
-  container.innerHTML = `
-    <a href="login.html" class="btn-secondary">Sign In</a>
-    <a href="register.html" class="btn-primary">Get Started</a>
-  `;
+  if (container) {
+    container.innerHTML = `
+      <a href="login.html" class="btn-secondary">Sign In</a>
+      <a href="register.html" class="btn-primary">Get Started</a>
+    `;
+  }
 }
 
 /**

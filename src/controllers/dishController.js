@@ -29,7 +29,8 @@ const DishController = {
   createOrder: async (req, res) => {
     try {
       const { items, totalAmount } = req.body;
-      const userId = req.user && mongoose.Types.ObjectId.isValid(req.user.id) ? req.user.id : null;
+      const rawUserId = req.user ? (req.user.id || req.user._id) : null;
+      const userId = rawUserId ? rawUserId.toString() : null;
 
       if (mongoose.connection.readyState === 1) {
         const order = new Order({
@@ -47,6 +48,7 @@ const DishController = {
 
     const localOrder = {
       _id: 'ord_' + Date.now(),
+      userId: req.user ? (req.user.id || req.user._id) : null,
       items: req.body.items,
       totalAmount: req.body.totalAmount,
       status: 'Placed',
@@ -59,8 +61,10 @@ const DishController = {
   // GET /api/orders
   getOrders: async (req, res) => {
     try {
+      const rawUserId = req.user ? (req.user.id || req.user._id) : null;
+      const userId = rawUserId ? rawUserId.toString() : null;
+
       if (mongoose.connection.readyState === 1) {
-        const userId = req.user && mongoose.Types.ObjectId.isValid(req.user.id) ? req.user.id : null;
         const query = userId ? { userId } : {};
         const orders = await Order.find(query).sort({ createdAt: -1 });
         return res.json({ success: true, orders });
@@ -68,7 +72,11 @@ const DishController = {
     } catch (err) {
       console.error('MongoDB Order Fetch Error:', err.message);
     }
-    res.json({ success: true, orders: localOrders });
+
+    const userOrders = req.user
+      ? localOrders.filter(o => !o.userId || o.userId === (req.user.id || req.user._id))
+      : localOrders;
+    res.json({ success: true, orders: userOrders });
   }
 };
 

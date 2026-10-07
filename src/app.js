@@ -16,18 +16,38 @@ const { authenticateToken } = require('./middleware/authMiddleware');
 const app = express();
 const PUBLIC_DIR = path.join(__dirname, '../public');
 
-// Ensure MongoDB database is connected on requests
-app.use(async (req, res, next) => {
-  await connectDB();
-  UserModel.seedDemoUser();
-  seedDishes();
-  next();
-});
-
 // Global Middlewares
 app.use(cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+
+// Serve static assets FIRST for lightning fast page loads
+app.use(express.static(PUBLIC_DIR));
+
+// Background initialization
+let initPromise = null;
+const initDB = async () => {
+  if (initPromise) return initPromise;
+  initPromise = (async () => {
+    try {
+      await connectDB();
+      await UserModel.seedDemoUser();
+      await seedDishes();
+    } catch (e) {
+      console.error('Initialization error:', e.message);
+    }
+  })();
+  return initPromise;
+};
+
+// Start initialization immediately
+initDB();
+
+// Ensure DB is initialized before executing /api routes
+app.use('/api', async (req, res, next) => {
+  await initDB();
+  next();
+});
 
 // Request Logging
 app.use((req, res, next) => {
@@ -35,9 +55,6 @@ app.use((req, res, next) => {
   console.log(`[${timestamp}] ${req.method} ${req.url}`);
   next();
 });
-
-// Serve static assets from public/ folder
-app.use(express.static(PUBLIC_DIR));
 
 // --------------------------------------------------------------------------
 // API Routes
