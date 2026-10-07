@@ -24,31 +24,10 @@ app.use(express.urlencoded({ extended: true }));
 // Serve static assets FIRST for lightning fast page loads
 app.use(express.static(PUBLIC_DIR));
 
-// Background initialization
-let initPromise = null;
-const initDB = async () => {
-  if (initPromise) return initPromise;
-  initPromise = (async () => {
-    try {
-      await connectDB();
-      await UserModel.seedDemoUser();
-      await seedDishes();
-    } catch (e) {
-      initPromise = null;
-      console.error('Initialization error:', e.message);
-      throw e;
-    }
-  })();
-  return initPromise;
-};
-
-// Start initialization immediately
-initDB().catch(() => {});
-
-// Ensure DB is initialized before executing /api routes
+// Ensure DB is connected before executing /api routes
 app.use('/api', async (req, res, next) => {
   try {
-    await initDB();
+    await connectDB();
     next();
   } catch (err) {
     console.error('Database connection error on API request:', err.message);
@@ -58,6 +37,16 @@ app.use('/api', async (req, res, next) => {
     });
   }
 });
+
+// Run background seed asynchronously without blocking user requests
+connectDB().then(async () => {
+  try {
+    await UserModel.seedDemoUser();
+    await seedDishes();
+  } catch (e) {
+    console.warn('Background seeding notice:', e.message);
+  }
+}).catch(() => {});
 
 // Request Logging
 app.use((req, res, next) => {
